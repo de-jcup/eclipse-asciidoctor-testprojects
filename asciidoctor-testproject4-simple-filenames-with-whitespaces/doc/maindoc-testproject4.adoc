@@ -1,0 +1,2 @@
+// next line represents bug described at :https://github.com/de-jcup/eclipse-asciidoctor-editor/issues/270
+include::included file with spaces.adoc[]

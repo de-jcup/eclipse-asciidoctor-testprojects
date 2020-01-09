@@ -16,10 +16,10 @@ If you have got a problem with eclipse asciidoctor editor please report an issue
 - checkout master branch
 
 ## Complete other setup
-When you have got a complete other project setup than any of the example projects, please do following:
+When you have got a complete other project setup/structure than any of the example projects, please do following:
 
 - create a new eclipse project in a dedicated subfolder of this repo
-  (Name should be short and clear)
+  (Name should be short and clear and follow name pattern: "asciidoctor-testproject{$Number}-{$shortDescription})"
 - create your asciidoc files in your project like your setup where you have problems with
 - commit, push ...
 - create PR on GitHub
