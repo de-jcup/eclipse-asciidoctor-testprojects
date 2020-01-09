@@ -1,2 +1,12 @@
-// next line represents bug described at :https://github.com/de-jcup/eclipse-asciidoctor-editor/issues/270
+// we do not expect validation failure, see :https://github.com/de-jcup/eclipse-asciidoctor-editor/issues/270
 include::included file with spaces.adoc[]
+
+// we do not expect validation failure, see https://github.com/de-jcup/eclipse-asciidoctor-editor/issues/270
+image::./../images/asciidoctor-editor-logo with spaces.png[] 
+
+// we do not expect validation failure, also code completion for this include shall work!
+// also links shall work
+include::subfolder with spaces/test-inside-subfolder-with-spaces.adoc[]
+
+// we do not expect validation failure
+plantuml::diagram1 with spaces.plantuml[format=svg, title="title"]
