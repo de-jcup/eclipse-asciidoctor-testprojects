@@ -1,0 +1,15 @@
+= Docker for running Java applications - Tutorial
+include::../10_Include/settings.adoc[]
+:vgwort: Docker
+Test data variant for problem described at https://github.com/de-jcup/eclipse-asciidoctor-editor/issues/280[GitHub Issue 280] 
+:author_twitter_handle: test user
+:revnumber:  2.3
+:revdate: 11.01.2019
+
+[abstract]
+This tutorial describes the usage of Docker to run java applications.
+
+include::../web/advertisement/afterTableOfContent.adoc[]
+include::010_overview.adoc[]
+include::012_installation-other-name.adoc[]
+include::014_usage_commandline.adoc[]

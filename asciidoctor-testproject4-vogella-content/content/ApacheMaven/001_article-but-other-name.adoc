@@ -1,0 +1,18 @@
+= Maven for building Java applications - Tutorial
+include::../10_Include/settings.adoc[]
+:vgwort: ApacheMaven
+Test data variant for problem described at https://github.com/de-jcup/eclipse-asciidoctor-editor/issues/280[GitHub Issue 280] 
+:author_twitter_handle: test user
+:revnumber:  2.3
+:revdate: 11.01.2019
+
+[abstract]
+This tutorial describes the usage of Maven for building Java applications.
+
+include::../web/advertisement/afterTableOfContent.adoc[]
+include::010_overview.adoc[]
+include::012_installation.adoc[]
+include::014_usage_commandline.adoc[]
+
+
+//This is just the same file (except this comment). Just to check if errors are about same filenames or not
