@@ -1,4 +1,11 @@
 == Included headline
 *next shows a image starting from base location means no `:imagesdir:` set:*
 
+// we are at this position at $root/doc/subfolder1
+// images are at $root/images
+// so we would normally need to go back two folders to get to $root and enter images
+// reading: https://asciidoctor.org/docs/asciidoctor-pdf/#image-paths
+// "...The imagesdir is blank by default, which means relative images paths are resolved relative to the input document...."
 image::./../images/asciidoctor-editor-logo.png[] 
+
+// here we got validation problems by asciidoctor editor but not by ASP!
