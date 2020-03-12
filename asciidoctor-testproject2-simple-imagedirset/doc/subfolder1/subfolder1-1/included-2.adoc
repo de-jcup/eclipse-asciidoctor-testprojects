@@ -1,0 +1,7 @@
+== Included 2
+*next shows a image by using images dir location:*
+
+NOTE: We are in subfolder1-1
+
+image::asciidoctor-editor-logo.png[] 
+

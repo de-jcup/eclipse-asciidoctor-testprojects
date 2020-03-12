@@ -1,3 +1,4 @@
 // we are inside doc folder, so we must go to parent and then to images!
 :imagesdir: ./../images
 include::subfolder1/included.adoc[] 
+include::subfolder1/subfolder1-1/included-2.adoc[] 
