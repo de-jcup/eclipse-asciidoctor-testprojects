@@ -1,5 +1,3 @@
-:imagesDir: ./../images
-
 // we do not expect validation failure, see https://github.com/de-jcup/eclipse-asciidoctor-editor/issues/270
-image::images/asciidoctor-editor-logo with spaces.png[] 
+image::./../images/asciidoctor-editor-logo with spaces.png[] 
 
