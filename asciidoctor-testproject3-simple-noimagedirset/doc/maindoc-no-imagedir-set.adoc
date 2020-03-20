@@ -1,1 +1,2 @@
 include::subfolder1/included.adoc[] 
+include::umlauts/umlauts.adoc[]
