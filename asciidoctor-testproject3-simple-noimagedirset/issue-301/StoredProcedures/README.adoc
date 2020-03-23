@@ -1,0 +1,641 @@
+= {myexerciseprefix}Stored Procedures{solutions-text}{mysubtitle}
+:description: Exercises to learn object relational mapping using JDBC and postgresql
+:keywords: database, sql, postgresql, plpgsql
+:ex_number: 0
+:current_dir_prefix: StoredProcedures/
+//:exercise_solution:
+include::../ADocMeta.asc[]
+include::../ADocGitlabVars.asc[]
+// simplify by using a common img location for the whole project like {ci_project_dir}/img
+:imagesdir: .
+:imagesoutdir: {imagesdir}
+:bankdb_url: {ci_project_dirref}Databases/bank
+
+== Zielsetzung
+
+. Einfaches PL/pgSQL und Stored Procedures mit https://www.postgresql.org[PostgreSQL] programmieren können.
+. Aufgaben mit Stored Procedures oder Functions lösen können.
+
+== Vorbereitung
+
+Für diese Übung benötigen Sie https://www.postgresql.org[PostgreSQL], https://www.pgadmin.org/[pgAdmin] und für die einführenden Beispiele die link:{bankdb_url}[bank] Datenbank.
+
+Detaillierte Informationen zum Laden der Daten finden Sie in der link:{ci_project_fileref}OR-Mapper_JPA/README.adoc#datenbank-bank[Übung zu OR-Mapper_JPA (Datenbank `bank`)].
+
+=== Eingesetzte Software
+
+Die eingesetzten Tools können Sie entweder als _Native Programme_ oder als _Docker services_ laufen lassen.
+Eine Mischung ist natürlich auch möglich.
+Detaillierte Informationen dazu finden Sie in der link:{ci_project_fileref}OR-Mapper_JPA/README.adoc#eingesetzte-software[ersten Übung (Eingesetzte Software)].
+
+=== Vorlagen
+
+Eine <<sp-rumpf, Vorlage für den Rumpf einer Stored Procedure>> finden Sie am Ende dieser Sektion.
+
+[NOTE]
+=====
+Dokumentationen und Beispiele zu Stored Procedures finden Sie über die folgenden Links:
+
+- https://www.postgresql.org/docs/current/plpgsql-structure.html[PL/pgSQL Struktur]
+- https://www.postgresql.org/docs/current/plpgsql-expressions.html[PL/pgSQL Expressions]
+- https://www.postgresql.org/docs/current/plpgsql-statements.html[PL/pgSQL Basic Statements]
+- https://www.postgresql.org/docs/current/static/plpgsql-porting.html[Portieren von Oracle PL/SQL]
+- https://postgres.cz/wiki/PL/pgSQL_%28en%29[Wann und wie setze ich Stored Procedures/Triggers ein]
+=====
+
+==== Einstieg in Prozeduren und Funktionen mit PostgreSQL (PL/pgSQL)
+
+Ziel dieses Abschnitts ist das Kennenlernen der PL/pgSQL -Syntax von Prozeduren und Funktionen (Prozeduren = Funktionen mit `VOID` als Rückgabetyp).
+Schauen Sie sich die folgenden Stored Procedures inklusive verwendeter Aufrufe an sodass Sie für die folgenden Aufgaben in der Lage sind eigene Stored Procedures zu schreiben und verwenden.
+
+Am Schluss dieser Sektion finden Sie einen Prozedur-Rumpf den Sie als Vorlage für die Aufgaben verwenden können.
+
+[discrete]
+===== Einfaches `SELECT` Statement ohne `RETURN` Statement und `SQL` als Sprache
+
+.Definition der Stored Procedure
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION selectName()
+  RETURNS CHAR
+  LANGUAGE sql
+  AS $$
+    SELECT name FROM angestellter WHERE persnr = 1100;
+$$;
+----
+
+.Ausführen der Stored Procedure
+[source,sql]
+----
+SELECT
+  selectName ();
+   "Widmer, Karl"
+----
+
+[discrete]
+===== Einfaches Helloworld helloNotice ohne und helloReturn mit Rückgabewert
+
+.Definition der Stored *Procedure* `helloNotice` mit `VOID` als Rückgabewert
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION helloNotice()
+  RETURNS VOID
+  LANGUAGE plpgsql
+  AS $$
+BEGIN
+  RAISE NOTICE 'Hello PostgreSQL';
+END;
+$$;
+----
+
+.Definition der Stored *Function* `helloReturn` mit `VARCHAR` als Rückgabewert
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION helloReturn()
+  RETURNS VARCHAR
+  LANGUAGE plpgsql
+  AS $$
+BEGIN
+  RETURN 'Hello PostgreSQL';
+END;
+$$;
+----
+
+.Ausführen der Prozedur
+[source,sql]
+----
+SELECT
+  helloNotice ();
+NOTICE:  Hello PostgreSQL
+   hellonotice
+-------------
+(1 row)
+----
+.Ausführen der Funktion
+[source,sql]
+----
+SELECT
+  helloReturn ();
+   helloreturn
+------------------
+ Hello PostgreSQL
+(1 row)
+----
+
+[NOTE]
+====
+Beachten Sie, dass die Ausgabe der Prozedur `helloNotice` im pgAdmin Tool im _Messages_ Fenster ausgegeben wird.
+Wenn Sie mit dem Kommandozeilenprogramm `psql` arbeiten wird die Meldung im selben Fenster ausgegeben.
+====
+
+[discrete]
+===== Einfache Funktion `fn3` mit Rückgabewert
+
+In diesem Beispiel sehen Sie einleitend auch wie eine Prozedur oder Funktion gelöscht wird.
+Am besten gewöhnen Sie sich an dies in allen Aufgaben vor jeder Funktion/Prozedur durchzuführen.
+Dadurch treten weniger respektive keine Fehler auf wenn Sie die Signatur ändern und die Funktion oder Prozedur neu erstellen.
+
+.Löschen der Stored Procedure/Function `fn3`
+[source,sql]
+----
+DROP FUNCTION IF EXISTS fn3 (INTEGER);
+----
+.Erstellen der Stored Function `fn3` welche den Namen, Postleitzahl und Ort zur gegebenen Bankcustomer-Id ausgibt und die Postleitzahl retourniert.
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION fn3 (_customerid IN bankcustomer.customerid % TYPE)
+  RETURNS address.zip % TYPE
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  name bankcustomer.name % TYPE;
+  zip address.zip % TYPE;
+  city address.city % TYPE;
+BEGIN
+  SELECT
+    c.name,
+    a.zip,
+    a.city
+  INTO
+    name,
+    zip,
+    city
+  FROM
+    bankcustomer c,
+    address a
+  WHERE
+    a.addressid = c.customer_addressid
+    AND c.customerid = _customerid;
+  RAISE NOTICE 'DEBUG: Name: %; Zip: %, Ort: %', name, zip, city;
+  -- Debug/Warnung (bricht nicht ab)
+  RETURN zip;
+  -- RAISE SQLSTATE '22012';  -- User Defined Exception!
+END;
+$$;
+----
+
+.Ausführen der Stored Function mit Ausgabe des Resultat
+[source,sql]
+----
+SELECT
+  fn3 (1);
+NOTICE:  DEBUG: Name: Paul Meier; Zip: 1000, Ort: Genève
+ fn3
+------
+ 1000
+(1 row)
+----
+
+[discrete]
+===== Prozedur mit `OUT` Parametern
+
+Beachten Sie in nachfolgendem Beispiel die explizit weggelassene `RETURN` Anweisung.
+PostgreSQL wird die Rückgabewerte anhand der Deklarationen selber bestimmen und ergänzen.
+Schauen Sie sich dazu am besten den Code der erstellten Stored Procedure mit pgAdmin an.
+Klappen Sie dazu folgende Sektion auf, menu:Databases[bank >  Schemas > public > Functions > myfn(...)] und selektieren den Reiter `SQL`.
+
+.Definition der Stored Procedure mit `OUT` Parametern und ohne Angabe von `RETURN`
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION myfn (myparam OUT int, myparam2 OUT int)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  myparam := 1;
+  myparam2 := 2;
+END;
+$$;
+----
+
+.Ausführen der Stored Procedure und Ausgabe des Parameter `myparam`
+[source,sql]
+----
+SELECT
+  myparam
+FROM
+  myfn ();
+ myparam
+---------
+       1
+(1 row)
+----
+
+.Ausführen der Stored Procedure und Ausgabe des Parameter `myparam2`
+[source,sql]
+----
+SELECT
+  myparam2
+FROM
+  myfn ();
+ myparam2
+----------
+        2
+(1 row)
+----
+
+.Ausführen der Stored Procedure und Ausgabe aller `OUT` Parameter
+[source,sql]
+----
+SELECT
+  *
+FROM
+  myfn ();
+ myparam | myparam2
+---------+----------
+       1 |        2
+(1 row)
+----
+
+[id='sp-rumpf']
+==== Rumpf für Stored Procedure/Function
+
+.Prozedurrumpf
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION myfunc (numba INTEGER)
+  RETURNS INTEGER    -- <1>
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  res INTEGER := 42;
+BEGIN
+  RETURN res * numba;
+END;
+$$;
+----
+<1> `VOID` falls Prozedur
+
+.Abfragebeispiel für Prozeduren und Funktionen
+[source,sql]
+----
+SELECT
+  myfunc (42);
+ myfunc
+--------
+   1764
+(1 row)
+----
+
+== Aufgaben
+
+=== Aufgabe {counter:ex_number}: Vielfache von 3 und 5 finden
+
+Wenn wir alle natürlichen Zahlen kleiner als 10 auflisten, die durch 3 oder 5 teilbar sind, erhalten wir die Zahlenfolge 3, 5, 6 und 9.
+Die Summe dieser Zahlenfolge ist 23.
+
+Erstellen Sie eine Stored Function `euler_001` in PL/pgSQL um die Summe aller Vielfachen von 3 und 5, welche kleiner als 1000 sind, auszugeben.
+
+https://projecteuler.net/problem=1[Quelle]
+
+ifdef::exercise_solution[]
+[example,title=""]
+=====
+.Löschen der Prozedur `euler_001`
+[source,sql]
+----
+DROP FUNCTION IF EXISTS euler_001 ();
+----
+.Erstellen der Prozedur `euler_001`
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION euler_001 ()
+  RETURNS INTEGER
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  res INTEGER := 0;
+BEGIN
+  FOR i IN 3..999 LOOP
+    IF mod(i, 3) = 0 OR mod(i, 5) = 0 THEN
+      res := res + i;
+    END IF;
+  END LOOP;
+  RETURN res;
+END;
+$$;
+----
+.Summe aller Vielfachen von 3 und 5
+[source,sql]
+----
+SELECT
+  euler_001 ();
+ euler_001
+-----------
+    233168
+(1 row)
+----
+=====
+endif::exercise_solution[]
+
+=== Aufgabe {counter:ex_number}: Gerade Fibonacci Zahlen
+
+Die Fibonacci Zahlen sind durch das folgende rekursive Gesetz
+
+stem:[f(n) = f(n-1) + f(n-2)]
+
+mit den Anfangswerten stem:[f(0) = 0] und stem:[f(1) = 1] definiert.
+
+[loweralpha]
+. Finde alle geraden Werte in der Fibonacci-Sequenz unterhalb von vier Millionen sowie ihre Summe (Achtung ab stem:[n>40] wird das Resultat RIESIG!).
+Gesucht ist also die Folge:
++
+stem:[1, 2, 8, 34, ... vier Millionen]
++
+mit all ihren Termen unter vier Millionen.
+. Die Summe all dieser Terme.
+
+Erstellen Sie dazu eine Stored Function `euler_002` in PL/pgSQL.
+
+https://projecteuler.net/problem=2[Quelle]
+
+[NOTE]
+=====
+Da diese Funktion mehrere Werte zurückgibt, sollten Sie sich über die entsprechenden Möglichkeiten in der PostgreSQL Dokumentation informieren.
+
+- https://www.postgresql.org/docs/11/plpgsql-control-structures.html#PLPGSQL-STATEMENTS-RETURNING[PL/pgSQL returning Statements]
+- https://www.postgresql.org/docs/11/xfunc-sql.html#XFUNC-SQL-FUNCTIONS-RETURNING-SET[Functions returning SET]
+=====
+
+ifdef::exercise_solution[]
+[example,title=""]
+=====
+.Löschen der Prozedur `euler_002`
+[source,sql]
+----
+DROP FUNCTION IF EXISTS euler_002 ();
+----
+.Erstellen der Prozedur `euler_002`
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION euler_002 ()
+  RETURNS SETOF INTEGER
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  x INTEGER := 1;
+  y INTEGER := 1;
+  tmp INTEGER;
+BEGIN
+  LOOP
+    IF mod(y, 2) = 0 THEN
+      RETURN NEXT y;
+    END IF;
+    tmp := x;
+    x := y;
+    y := tmp + y;
+    EXIT WHEN y > 4000000;
+  END LOOP;
+  RETURN;
+END;
+$$;
+----
+.a) Alle geraden Werte in der Fibonacci-Sequenz
+[source,sql]
+----
+SELECT
+  *
+FROM
+  euler_002 ();
+ euler_002
+-----------
+         2
+         8
+        34
+       144
+       610
+      2584
+     10946
+     46368
+    196418
+    832040
+   3524578
+(11 rows)
+----
+.b) Die Summe all dieser Terme
+[source,sql]
+----
+SELECT
+  sum(euler_002)
+FROM
+  euler_002 ();
+   sum
+---------
+ 4613732
+(1 row)
+----
+=====
+endif::exercise_solution[]
+
+=== Aufgabe {counter:ex_number}: Primfaktoren
+
+Erstellen Sie eine Stored Function `euler_003` in PL/pgSQL um den grössten Primfaktor der Zahl stem:[600851475143] herauszufinden.
+
+Verwenden Sie eine separate Funktion `is_prime` zur Überprüfung auf eine Primzahl.
+
+
+[TIP]
+======
+Informieren Sie sich auf https://www.postgresql.org/docs/current/static/datatype-numeric.html[dieser Seite] über die numerischen Grenzen von Datentypen.
+======
+
+https://projecteuler.net/problem=3[Quelle]
+
+ifdef::exercise_solution[]
+[example,title=""]
+=====
+.Löschen der Prozedur `is_prime`
+[source,sql]
+----
+DROP FUNCTION IF EXISTS is_prime (BIGINT);
+----
+.Erstellen der Prozedur `is_prime` zur Überprüfung auf eine Primzahl
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION is_prime (n BIGINT)
+  RETURNS BOOLEAN
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  i BIGINT := 1;
+BEGIN
+  FOR i IN 2..sqrt(n)
+  LOOP
+    IF mod(n, i) = 0 THEN
+      RETURN FALSE;
+    END IF;
+  END LOOP;
+  RETURN TRUE;
+END;
+$$;
+----
+.Löschen der Prozedur `euler_003`
+[source,sql]
+----
+DROP FUNCTION IF EXISTS euler_003 ();
+----
+.Erstellen der Prozedur `euler_003`
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION euler_003 ()
+  RETURNS BIGINT
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  x BIGINT := 2;
+  y BIGINT := 600851475143;
+BEGIN
+  WHILE x < y LOOP
+    IF is_prime (x) THEN
+      WHILE mod(y, x) = 0 LOOP
+        y := y / x;
+      END LOOP;
+    END IF;
+    x := x + 1;
+  END LOOP;
+  RETURN y;
+END;
+$$;
+----
+.Grösster Primfaktor von 600851475143
+[source,sql]
+----
+SELECT
+  euler_003 ();
+ euler_003
+-----------
+      6857
+(1 row)
+----
+=====
+endif::exercise_solution[]
+
+=== Aufgabe {counter:ex_number}: Palindromzahlen
+
+Palindromzahlen sind natürliche Zahlen, deren Darstellung von vorne und hinten gelesen den gleichen Wert hat.
+Ein Beispiel wäre stem:[4554].
+
+Die grösste Palindromzahl aus dem Produkt von zwei 2-stelligen Zahlen ist stem:[9009 = 91 * 99].
+
+. Erstellen Sie eine Stored Function `is_palindrome` in PL/pgSQL, welche eine Zahl als TEXT, also "4554", auf ein Palindrom hin überprüft.
+. Erstellen Sie nun die Stored Function `euler_004`, welche _alle_ Palindrome aus dem Produkt von *zwei 3-stelligen Zahlen* bildet und als Liste/Tabelle zurück gibt.
+
+[loweralpha]
+.Aufgaben
+. Welches ist das grösste Palindrom?
+. Listen Sie alle Palindrome auf.
+. Wie viele sind es?
+
+[TIP]
+======
+Verwenden Sie zum einfacheren Vergleich auf ein Palindrom den Datentyp `TEXT`.
+Informieren Sie sich auf https://www.postgresql.org/docs/current/static/functions-formatting.html[dieser Seite] über Möglichkeiten eine Zahl in Text umzuwandeln.
+======
+
+https://projecteuler.net/problem=4[Quelle]
+
+ifdef::exercise_solution[]
+[example,title=""]
+=====
+.Löschen der Prozedur `is_palindrome`
+[source,sql]
+----
+DROP FUNCTION IF EXISTS is_palindrome (TEXT);
+----
+.Erstellen der Prozedur `is_palindrome` zur Überprüfung ob der angegebene Text ein Palindrom ist
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION is_palindrome (n TEXT)
+  RETURNS BOOLEAN
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  i INTEGER;
+  len CONSTANT INTEGER := length(n);
+BEGIN
+  FOR i IN 1..(len / 2)
+  LOOP
+    IF substr(n, i, 1) <> substr(n, len - i + 1, 1) THEN
+      RETURN FALSE;
+    END IF;
+  END LOOP;
+  RETURN TRUE;
+END;
+$$;
+----
+.Löschen der Prozedur `euler_004`
+[source,sql]
+----
+DROP FUNCTION IF EXISTS euler_004 ();
+----
+.Erstellen der Prozedur `euler_004`
+[source,sql]
+----
+CREATE OR REPLACE FUNCTION euler_004 ()
+  RETURNS SETOF INTEGER
+  LANGUAGE plpgsql
+  AS $$
+DECLARE
+  i INTEGER;
+  j INTEGER;
+  prod INTEGER;
+  res INTEGER := 0;
+BEGIN
+  FOR i IN 100..999 LOOP
+    FOR j IN i..999 LOOP
+      prod := i * j;
+      IF is_palindrome (to_char(prod, 'FM999999')) THEN
+        res := prod;
+        RETURN NEXT res;
+      END IF;
+    END LOOP;
+  END LOOP;
+  RETURN;
+END;
+$$;
+----
+.a) Grösstes Palindrom
+[source,sql]
+----
+SELECT
+  max(euler_004)
+FROM
+  euler_004 ();
+  max
+--------
+ 906609
+(1 row)
+----
+.b) Liste der Palindrome
+[source,sql]
+----
+SELECT
+  DISTINCT(euler_004)
+FROM
+  euler_004 ();
+ euler_004
+-----------
+     10201
+       ...
+    906609
+(655 rows)
+----
+.c) Anzahl Palindrome
+[source,sql]
+----
+SELECT
+  count(DISTINCT euler_004)
+FROM
+  euler_004 ();
+ count
+-------
+   655
+(1 row)
+----
+=====
+endif::exercise_solution[]
+
+[appendix,id='solutions']
+== Musterlösung
+
+Die Musterlösung zu den Übungen finden Sie auf link:{ci_project_fileref}{current_dir_prefix}README.solutions.adoc[dieser Seite]
+oder als link:{ci_project_artifacts_download}{current_dir_prefix}StoredProcedures-Solutions.pdf?job=ArtifactsCollection[PDF Datei].
