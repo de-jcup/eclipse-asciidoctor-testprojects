@@ -2,5 +2,8 @@
 //:mysubtitle: : ü 
 :mysubtitle: ü 
 
-Without include but embedded variable, alos problem does happen
-after a rebuild when having two colonss
+// next line works also well
+//:mysubtitle: ü:ä 
+
+Without include but embedded variable, also problem does happen
+after a rebuild when having a colon inside start of variable
