@@ -1,0 +1,6 @@
+= Variable problem:{mysubtitle}
+//:mysubtitle: : ü 
+:mysubtitle: ü 
+
+Without include but embedded variable, alos problem does happen
+after a rebuild when having two colonss

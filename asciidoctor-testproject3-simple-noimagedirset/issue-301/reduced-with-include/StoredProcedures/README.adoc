@@ -1,0 +1,14 @@
+= Variable include problem:{mysubtitle}
+
+include::../ADocMeta.asc[]
+
+The problem was the usage of 2 colons and an umlaut +
+`:mysubtitle: : ü` inside ADocMeta.asc !
+
+After change to
+`:mysubtitle: ü` +
+it worked well with ASP and native asciidoctor.
+
+
+TIP: ü works well inside adoc element itself, works
+     
