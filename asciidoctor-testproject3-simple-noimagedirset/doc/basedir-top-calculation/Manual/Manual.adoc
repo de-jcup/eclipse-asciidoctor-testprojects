@@ -1,0 +1,18 @@
+include::../Common.adoc[]
+
+= Test
+
+Main text
+
+var1 = {var1} (from included)
+
+var2 = {var2} (from included)
+
+image::tux.svg[]
+Direct: expect not working, no imagesdir attribute set
+
+image::img/tux.svg[]
+Document relative path: WRONG! Should work as the images are in ./img/ directory relative to this file
+
+image::Manual/img/tux.svg[]
+Relative path from document's parent directory: WRONG! Why should I specify Manual/ directory? Is the "include" directive braking paths? 
